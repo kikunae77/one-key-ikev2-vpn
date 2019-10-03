@@ -427,7 +427,7 @@ function configure_strongswan(){
         load_modular = yes
         plugins {
                 duplicheck.enable = no
-                include strongswan.d/charon/*.conf
+                include ./strongswan.d/charon/*.conf
         }
         dns1 = 8.8.8.8
         dns2 = 8.8.4.4
