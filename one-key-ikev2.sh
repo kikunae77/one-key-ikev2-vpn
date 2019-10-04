@@ -370,6 +370,26 @@ conn android_xauth_psk
     rightauth2=xauth
     rightsourceip=10.31.2.0/24
     auto=add
+    
+conn android_ikev2
+    keyexchange=ikev2
+    ike=aes256-sha256-modp2048,3des-sha1-modp2048,aes256-sha1-modp2048!
+    esp=aes256-sha256,3des-sha1,aes256-sha1!
+    rekey=no
+    left=%defaultroute
+    leftid=${vps_ip}
+    leftsendcert=always
+    leftauth=pubkey
+    leftsubnet=0.0.0.0/0
+    leftcert=server.cert.pem
+    right=%any
+    rightauth=eap-mschapv2
+    rightsourceip=10.31.2.0/24
+    rightsendcert=never
+    eap_identity=%any
+    dpdaction=clear
+    fragmentation=yes
+    auto=add
 
 conn networkmanager-strongswan
     keyexchange=ikev2
@@ -518,15 +538,17 @@ function iptables_set(){
         iptables -A INPUT -i $interface -p udp --dport 1701 -j ACCEPT
         iptables -A INPUT -i $interface -p tcp --dport 1723 -j ACCEPT
         #iptables -A FORWARD -j REJECT
+        iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -m policy --dir out --pol ipsec -j ACCEPT
+        iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -m policy --dir out --pol ipsec -j ACCEPT
+        iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -m policy --dir out --pol ipsec -j ACCEPT
         if [ "$use_SNAT_str" = "1" ]; then
             iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -j SNAT --to-source $static_ip
             iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -j SNAT --to-source $static_ip
             iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -j SNAT --to-source $static_ip
-        else
-            iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -j MASQUERADE
-            iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -j MASQUERADE
-            iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -j MASQUERADE
         fi
+        iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -j MASQUERADE
+        iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -j MASQUERADE
+        iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -j MASQUERADE
     else
         read -p "Network card interface(default_value:venet0):" interface
         if [ "$interface" = "" ]; then
@@ -543,15 +565,17 @@ function iptables_set(){
         iptables -A INPUT -i $interface -p udp --dport 1701 -j ACCEPT
         iptables -A INPUT -i $interface -p tcp --dport 1723 -j ACCEPT
         #iptables -A FORWARD -j REJECT
+        iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -m policy --dir out --pol ipsec -j ACCEPT
+        iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -m policy --dir out --pol ipsec -j ACCEPT
+        iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -m policy --dir out --pol ipsec -j ACCEPT
         if [ "$use_SNAT_str" = "1" ]; then
             iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -j SNAT --to-source $static_ip
             iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -j SNAT --to-source $static_ip
             iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -j SNAT --to-source $static_ip
-        else
-            iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -j MASQUERADE
-            iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -j MASQUERADE
-            iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -j MASQUERADE
         fi
+        iptables -t nat -A POSTROUTING -s 10.31.0.0/24 -o $interface -j MASQUERADE
+        iptables -t nat -A POSTROUTING -s 10.31.1.0/24 -o $interface -j MASQUERADE
+        iptables -t nat -A POSTROUTING -s 10.31.2.0/24 -o $interface -j MASQUERADE
     fi
     if [ "$system_str" = "0" ]; then
         service iptables save
